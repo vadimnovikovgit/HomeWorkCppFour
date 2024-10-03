@@ -26,6 +26,11 @@ int Building::getAge() const
 	return _age;
 }
 
+int Building::getMaxAge() const
+{
+	return _maxAge;
+}
+
 void Building::toAge()
 {
 	_age++;

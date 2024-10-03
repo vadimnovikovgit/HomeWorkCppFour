@@ -21,16 +21,12 @@ int getRandomNumber(int min, int max) {
 	return uid(rng);
 }
 
-std::vector<std::shared_ptr<IUpdater>> buildHomes(int quantity) {
+void buildHomes(OSBB*& company, int quantity) {
 	std::vector<std::shared_ptr<IUpdater>> buildings;
 	for (size_t i = 0; i < quantity; i++)
 	{
-		buildings.push_back(std::make_shared<Building>(getRandomNumber(2, 12), getRandomNumber(100000, 10000000)));
+		company->Attach(std::make_shared<Building>(getRandomNumber(2, 12), getRandomNumber(100000, 10000000)));
 	}
-	return buildings;
-}
-void reCheckBuildingVector(std::vector<std::shared_ptr<IUpdater>>& buildVec, OSBB* company) {
-	buildVec = company->getBuildingList();
 }
 
 void startAging(std::vector<std::shared_ptr<IUpdater>>& buildings) {
@@ -40,19 +36,12 @@ void startAging(std::vector<std::shared_ptr<IUpdater>>& buildings) {
 			std::lock_guard<std::mutex> lg{ mt };
 			std::cout << "Year " << years << "\n========================================================================\n";
 			for (const auto& b : buildings) {
-				if (b == nullptr) {
-					buildings.erase(std::find(buildings.begin(), buildings.end(), b));
-					continue;
-				}
 				auto castBuilding{ dynamic_cast<Building*>(b.get()) };
 				if (castBuilding == nullptr) {
-					buildings.erase(std::find(buildings.begin(), buildings.end(), b));
 					continue;
 				}
-				castBuilding->toAge();
-				
-				std::cout << "Building: " << castBuilding->getCurrentId() << " cost: " << castBuilding->getCost() << " age: " << castBuilding->getAge() << std::endl;
-				
+				castBuilding->toAge();				
+				std::cout << "Building: " << castBuilding->getCurrentId() << " cost: " << castBuilding->getCost() << " age: " << castBuilding->getAge() << " max age: " << castBuilding->getMaxAge() << std::endl;	
 			}
 		}
 		std::cout << "========================================================================\n";
@@ -69,17 +58,15 @@ void osbbWorkFlow(OSBB* company, std::vector<std::shared_ptr<IUpdater>>& buildVe
 		cv.wait(lock, [] { return agingComplete; });
 		company->Notify();
 		agingComplete = false;
-		reCheckBuildingVector(buildVec, company);
 	}
 }
 
 
 int main() {
 	OSBB* company{ new OSBB{} };
-	auto district{ buildHomes(10) };
-	company->registerBuildings(district);
-	std::thread age{ startAging, std::ref(district) };	
-	std::thread osbb{ osbbWorkFlow,  std::ref(company), std::ref(district)};
+	buildHomes(company, 10);
+	std::thread age{ startAging, std::ref(company->getBuildingList()) };	
+	std::thread osbb{ osbbWorkFlow,  std::ref(company), std::ref(company->getBuildingList())};
 	age.join();
 	osbb.join();
 

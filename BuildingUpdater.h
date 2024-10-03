@@ -3,9 +3,11 @@
 #include <list>
 #include <vector>
 #include <memory>
+
 class IUpdater {
 public:
 	virtual bool checkAgeStatus() = 0;
+	virtual ~IUpdater() = default;
 };
 
 class Iosbb {
@@ -43,11 +45,7 @@ public:
 		}
 
 	}
-	void registerBuildings(std::vector<std::shared_ptr<IUpdater>>& buildings) {
-		for (auto& building : buildings) {
-			Attach(building);
-		}
-	}
+
 	std::vector<std::shared_ptr<IUpdater>>& getBuildingList() {
 		return buildingList;
 	}
